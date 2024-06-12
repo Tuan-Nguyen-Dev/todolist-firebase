@@ -4,7 +4,7 @@ export interface TaskModel {
     dueDate: Date;
     start: Date;
     end: Date;
-    udi: string[];
+    uids: string[];
     color?: string;
     fileUrls: string[];
 

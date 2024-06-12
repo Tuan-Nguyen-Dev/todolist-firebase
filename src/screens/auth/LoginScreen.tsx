@@ -9,6 +9,12 @@ import TextComponent from '../../components/TextComponent';
 import {Button, Input, Section, Space} from '@bsdaoquang/rncomponent';
 import {fontFamilies} from '../../constansts/fontFamilies';
 import {colors} from '../../constansts/colors';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+
+GoogleSignin.configure({
+  webClientId:
+    '111330531866-002dqqtb5b4956s0bvi4s55ll9o3v9on.apps.googleusercontent.com',
+});
 
 const LoginScreen = ({navigation}: any) => {
   const [email, setEmail] = useState('');
@@ -36,6 +42,24 @@ const LoginScreen = ({navigation}: any) => {
         });
     }
   };
+
+  async function onGoogleButtonPress() {
+    // Check if your device supports Google Play
+    try {
+      await GoogleSignin.hasPlayServices({showPlayServicesUpdateDialog: true});
+      // Get the users ID token
+      const {idToken} = await GoogleSignin.signIn();
+      console.log(idToken);
+      // Create a Google credential with the token
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+
+      // Sign-in the user with the credential
+      auth().signInWithCredential(googleCredential);
+      console.log('User signed in successfully');
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   return (
     <Container>
@@ -80,6 +104,7 @@ const LoginScreen = ({navigation}: any) => {
           title="Login"
           onPress={handleLoginWithEmail}
         />
+        {/* <Button title="Login with Google " onPress={onGoogleButtonPress} /> */}
 
         <Space height={20} />
         <Text style={[globalStyles.text, {textAlign: 'center'}]}>

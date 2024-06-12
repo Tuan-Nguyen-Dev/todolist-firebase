@@ -1,5 +1,5 @@
 import {View} from 'react-native';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Container from '../../components/Container';
 import TextComponent from '../../components/TextComponent';
 import {TaskModel} from '../../models/TaskModel';
@@ -15,6 +15,9 @@ import {
 import {colors} from '../../constansts/colors';
 import {CloseCircle} from 'iconsax-react-native';
 import DateTimePickerComponent from '../../components/DateTimePickerComponent';
+import DropdownPicker from '../../components/DropdownPicker';
+import {SelecModel} from '../../models/SelectModel';
+import firestore from '@react-native-firebase/firestore';
 
 const initValue: TaskModel = {
   title: '',
@@ -22,14 +25,40 @@ const initValue: TaskModel = {
   dueDate: new Date(),
   start: new Date(),
   end: new Date(),
-  udi: [],
+  uids: [],
   fileUrls: [],
 };
 
 const AddNewTask = ({navigation}: any) => {
   const [taskDetail, setTaskDetail] = useState<TaskModel>(initValue);
+  const [userSelect, setUserSelect] = useState<SelecModel[]>([]);
 
-  const handleChangeValue = (id: string, value: string | Date) => {
+  useEffect(() => {
+    handelGetAllUsers();
+  }, []);
+
+  const handelGetAllUsers = async () => {
+    await firestore()
+      .collection('users')
+      .get()
+      .then(snap => {
+        if (snap.empty) {
+          console.log('User not found');
+        } else {
+          const items: SelecModel[] = [];
+          snap.forEach(item => {
+            items.push({
+              label: item.data().name,
+              value: item.id,
+            });
+          });
+          setUserSelect(items);
+        }
+      })
+      .catch(error => console.log(`Can not get users error: ${error.message}`));
+  };
+
+  const handleChangeValue = (id: string, value: string | string[] | Date) => {
     const item: any = {...taskDetail};
 
     item[`${id}`] = value;
@@ -98,6 +127,14 @@ const AddNewTask = ({navigation}: any) => {
             />
           </View>
         </Row>
+
+        <DropdownPicker
+          selected={taskDetail.uids}
+          items={userSelect}
+          onSelect={val => handleChangeValue('uids', val)}
+          title="Members"
+          mutible
+        />
       </Section>
       <Section>
         <Button inline type="primary" title="Save" onPress={handleAddNewTask} />
