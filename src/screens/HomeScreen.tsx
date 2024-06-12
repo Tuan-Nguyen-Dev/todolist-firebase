@@ -11,6 +11,7 @@ import {
   Add,
   Edit2,
   Element4,
+  Logout,
   Notification,
   SearchNormal,
 } from 'iconsax-react-native';
@@ -19,11 +20,13 @@ import CicularComponent from '../components/CicularComponent';
 import CardImageConponent from '../components/CardImageConponent';
 import AvatarGroup from '../components/AvatarGroup';
 import ProgressBarComponent from '../components/ProgressBarComponent';
+import auth from '@react-native-firebase/auth';
 
-const HomeScreen = () => {
+const HomeScreen = ({navigation}: any) => {
+  const user = auth().currentUser;
   return (
     <View style={{flex: 1}}>
-      <Container>
+      <Container isScroll>
         <Section>
           <Row justifyContent="space-between">
             <Element4 size={24} color={colors.desc} />
@@ -31,18 +34,26 @@ const HomeScreen = () => {
           </Row>
         </Section>
         <Section>
-          <Text color={colors.white} text="Hi, Nguyen Tuan" />
-          <Text
-            text="Hello My name is Tuan"
-            color={colors.white}
-            font={fontFamilies.semiBold}
-            size={20}
-          />
+          <Row>
+            <View style={{flex: 1}}>
+              <Text color={colors.white} text={`Hi, ${user?.email}`} />
+              <TitleComponent
+                text="Be Production today"
+                color={colors.white}
+                font={fontFamilies.semiBold}
+                size={20}
+              />
+            </View>
+            <TouchableOpacity onPress={async () => auth().signOut()}>
+              <Logout size={22} color="coral" />
+            </TouchableOpacity>
+          </Row>
         </Section>
+
         <Section>
           <Row
             styles={[globalStyles.inputContainer]}
-            onPress={() => console.log('On lick')}>
+            onPress={() => navigation.navigate('SearchScreen')}>
             <TextComponent color={colors.gray2} text="Search task" />
             <SearchNormal size={20} color={colors.white} />
           </Row>
@@ -136,12 +147,40 @@ const HomeScreen = () => {
           justifyContent: 'center',
         }}>
         <TouchableOpacity
+          onPress={() => navigation.navigate('AddNewTask')}
           style={[
             globalStyles.row,
             {
               backgroundColor: colors.blue,
               padding: 10,
-              borderRadius: 100,
+              borderRadius: 12,
+              paddingVertical: 14,
+              width: '80%',
+            },
+          ]}>
+          <TextComponent text="Add new tasks" flex={0} />
+          <Add size={22} color={colors.white} />
+        </TouchableOpacity>
+      </View>
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          left: 0,
+          padding: 20,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('AddNewTask')}
+          style={[
+            globalStyles.row,
+            {
+              backgroundColor: colors.blue,
+              padding: 10,
+              borderRadius: 12,
+              paddingVertical: 14,
               width: '80%',
             },
           ]}>
