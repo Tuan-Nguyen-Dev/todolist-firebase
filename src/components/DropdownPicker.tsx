@@ -20,6 +20,7 @@ import {
 } from 'iconsax-react-native';
 import TextComponent from './TextComponent';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import {fontFamilies} from '../constansts/fontFamilies';
 
 interface Props {
   title?: string;
@@ -107,7 +108,7 @@ const DropdownPicker = (props: Props) => {
   };
   return (
     <View style={{marginBottom: 16}}>
-      {title && <TitleComponent text={title} />}
+      {title && <TitleComponent font={fontFamilies.medium} text={title} />}
       <Row
         onPress={() => setIsVisible(true)}
         styles={[

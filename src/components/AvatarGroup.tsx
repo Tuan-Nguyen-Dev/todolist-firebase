@@ -6,7 +6,12 @@ import {Row} from '@bsdaoquang/rncomponent';
 import {fontFamilies} from '../constansts/fontFamilies';
 import {colors} from '../constansts/colors';
 
-const AvatarGroup = () => {
+interface Props {
+  uids: string[];
+}
+
+const AvatarGroup = (props: Props) => {
+  const {uids} = props;
   const uidsLength = 10;
   const imageUrl = `https://th.bing.com/th/id/R.a53435c596b32a0161beb79df5080c88?rik=IXhmuoLG9kbA1w&pid=ImgRaw&r=0`;
   const imageStyle = {

@@ -1,4 +1,4 @@
-import {View} from 'react-native';
+import {Alert, PermissionsAndroid, Platform, View} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import Container from '../../components/Container';
 import TextComponent from '../../components/TextComponent';
@@ -13,29 +13,62 @@ import {
   Text,
 } from '@bsdaoquang/rncomponent';
 import {colors} from '../../constansts/colors';
-import {CloseCircle} from 'iconsax-react-native';
+import {AttachCircle, CloseCircle} from 'iconsax-react-native';
 import DateTimePickerComponent from '../../components/DateTimePickerComponent';
 import DropdownPicker from '../../components/DropdownPicker';
 import {SelecModel} from '../../models/SelectModel';
 import firestore from '@react-native-firebase/firestore';
+import TitleComponent from '../../components/TitleComponent';
+import DocumentPicker, {
+  DocumentPickerOptions,
+  DocumentPickerResponse,
+} from 'react-native-document-picker';
+import {fontFamilies} from '../../constansts/fontFamilies';
+import storage from '@react-native-firebase/storage';
+import {calcFileSize} from '../../utils/calcFileSize';
+import RNFetchBlob from 'rn-fetch-blob';
 
 const initValue: TaskModel = {
   title: '',
   description: '',
-  dueDate: new Date(),
-  start: new Date(),
-  end: new Date(),
+  dueDate: undefined,
+  start: undefined,
+  end: undefined,
   uids: [],
   fileUrls: [],
+  createdAt: undefined,
 };
 
 const AddNewTask = ({navigation}: any) => {
   const [taskDetail, setTaskDetail] = useState<TaskModel>(initValue);
   const [userSelect, setUserSelect] = useState<SelecModel[]>([]);
+  const [attachments, setAttachments] = useState<DocumentPickerResponse[]>([]);
+  const [attachementUrl, setAttachementUrl] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<DocumentPickerResponse>();
+  const [status, setStatus] = useState('');
+  const [bytesTransferented, setBytesTransferented] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     handelGetAllUsers();
   }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+      ]);
+    }
+  }, []);
+
+  const getFilePath = async (file: DocumentPickerResponse) => {
+    if (Platform.OS === 'ios') {
+      return file.uri;
+    } else {
+      return await RNFetchBlob.fs.stat(file.uri);
+    }
+  };
 
   const handelGetAllUsers = async () => {
     await firestore()
@@ -67,11 +100,51 @@ const AddNewTask = ({navigation}: any) => {
   };
 
   const handleAddNewTask = async () => {
-    console.log(taskDetail);
+    const data = {
+      ...taskDetail,
+      fileUrls: attachementUrl,
+    };
+
+    await firestore()
+      .collection('tasks')
+      .add({...data, createdAt: firestore.FieldValue.serverTimestamp()})
+      .then(() => {
+        console.log('Add new task successfully');
+        navigation.goBack();
+      })
+      .catch(error => console.log(error));
+  };
+
+  const handlePickerDocument = () => {
+    DocumentPicker.pick({
+      allowMultiSelection: false,
+      // type: [DocumentPicker.types.audio],
+    })
+      .then(res => {
+        setAttachments(res);
+        res.forEach(item => handleUploadFileToStorage(item));
+      })
+      .catch(error => console.log(error));
+  };
+
+  const handleUploadFileToStorage = async (item: DocumentPickerResponse) => {
+    const fileName = item.name ?? `files${Date.now()}`;
+    const path = `document/${fileName}`;
+    const items = [...attachementUrl];
+    await storage().ref(path).putString(item.uri);
+
+    await storage()
+      .ref(path)
+      .getDownloadURL()
+      .then(url => {
+        items.push(url);
+        setAttachementUrl(items);
+      })
+      .catch(error => console.log(error));
   };
 
   return (
-    <Container back title="Add new task">
+    <Container back title="Add new task" isScroll>
       <Section>
         <Input
           radius={12}
@@ -135,7 +208,25 @@ const AddNewTask = ({navigation}: any) => {
           title="Members"
           mutible
         />
+        <View>
+          <Row onPress={handlePickerDocument} justifyContent="flex-start">
+            <TitleComponent
+              font={fontFamilies.medium}
+              flex={0}
+              text="Attachments"
+            />
+            <Space width={8} />
+            <AttachCircle size={20} color={colors.white} />
+          </Row>
+          {attachments.length > 0 &&
+            attachments.map((item, index) => (
+              <Row key={`attachements${index}`}>
+                <TextComponent text={item.name ?? ''} />
+              </Row>
+            ))}
+        </View>
       </Section>
+
       <Section>
         <Button inline type="primary" title="Save" onPress={handleAddNewTask} />
       </Section>
