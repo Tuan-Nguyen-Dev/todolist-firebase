@@ -144,9 +144,11 @@ const HomeScreen = ({navigation}: any) => {
 
                   <View style={{marginVertical: 30}}>
                     <AvatarGroup uids={tasks[0].uids} />
-                    {tasks[0].progress && (
-                      <ProgressBarComponent percent="70%" />
-                    )}
+                    {tasks[0].progress && (tasks[0].progress as number) >= 0 ? (
+                      <ProgressBarComponent
+                        percent={`${Math.floor(tasks[0].progress * 100)}%`}
+                      />
+                    ) : null}
                   </View>
 
                   <TextComponent
@@ -177,7 +179,9 @@ const HomeScreen = ({navigation}: any) => {
                     <TitleComponent text={tasks[1].title} />
                     {tasks[1].uids && <AvatarGroup uids={tasks[1].uids} />}
                     {tasks[1].progress && (
-                      <ProgressBarComponent percent="40%" />
+                      <ProgressBarComponent
+                        percent={`${Math.floor(tasks[1].progress * 100)}%`}
+                      />
                     )}
                   </CardImageConponent>
                 )}
