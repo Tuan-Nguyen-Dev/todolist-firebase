@@ -21,3 +21,13 @@ export interface Attachment {
     size: number,
     type?: string
 }
+
+export interface SubTask {
+    createAt: number
+    description: string
+    id: string
+    taskId: string
+    updatedAt: number
+    title: string,
+    isCompleted: boolean
+}

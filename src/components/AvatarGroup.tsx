@@ -1,10 +1,12 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {Image, View} from 'react-native';
 import TextComponent from './TextComponent';
 import {globalStyles} from '../styles/globalStyles';
 import {Row} from '@bsdaoquang/rncomponent';
 import {fontFamilies} from '../constansts/fontFamilies';
 import {colors} from '../constansts/colors';
+import firestore from '@react-native-firebase/firestore';
+import AvatarComponent from './AvatarComponent';
 
 interface Props {
   uids: string[];
@@ -12,8 +14,38 @@ interface Props {
 
 const AvatarGroup = (props: Props) => {
   const {uids} = props;
-  const uidsLength = 10;
-  const imageUrl = `https://th.bing.com/th/id/R.a53435c596b32a0161beb79df5080c88?rik=IXhmuoLG9kbA1w&pid=ImgRaw&r=0`;
+  const [usersName, setUsersName] = useState<
+    {
+      name: string;
+      imgUrl: string;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    getUserAvata();
+  }, [uids]);
+
+  const getUserAvata = async () => {
+    const items: any = [...usersName];
+    uids.forEach(async id => {
+      await firestore()
+        .doc(`users/${id}`)
+        .get()
+        .then((snap: any) => {
+          if (snap.exists) {
+            items.push({
+              name: snap.data().displayName,
+              imgUrl: snap.data().imgUrl ?? '',
+            });
+          }
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    });
+    setUsersName(items);
+  };
+
   const imageStyle = {
     width: 32,
     height: 32,
@@ -23,19 +55,14 @@ const AvatarGroup = (props: Props) => {
   };
   return (
     <Row styles={{justifyContent: 'flex-start'}}>
-      {Array.from({length: uidsLength}).map(
+      {uids.map(
         (item, index) =>
-          index < 3 && (
-            <Image
-              source={{uri: imageUrl}}
-              key={`image${index}`}
-              style={[imageStyle, {marginLeft: index > 0 ? -10 : 0}]}
-            />
-          ),
+          index < 3 && <AvatarComponent uid={item} index={index} key={item} />,
       )}
 
-      {uidsLength > 5 && (
+      {uids.length > 3 && (
         <View
+          key={'total'}
           style={[
             imageStyle,
             {
@@ -52,7 +79,7 @@ const AvatarGroup = (props: Props) => {
               lineHeight: 19,
             }}
             font={fontFamilies.semiBold}
-            text={`+${uidsLength - 3 > 9 ? 9 : uidsLength - 3}`}
+            text={`+${uids.length - 3 > 9 ? 9 : uids.length - 3}`}
           />
         </View>
       )}
