@@ -38,38 +38,43 @@ const initValue: TaskModel = {
   uids: [],
   attachments: [],
   createdAt: undefined,
+  isUrgent: false,
 };
+import {FirebaseAuthTypes} from '@react-native-firebase/auth';
+import auth from '@react-native-firebase/auth';
+import InputComponent from '../../components/InputComponent';
 
-const AddNewTask = ({navigation}: any) => {
+const AddNewTask = ({navigation, route}: any) => {
+  const {editable, task}: {editable: boolean; task: TaskModel} = route.params;
+
   const [taskDetail, setTaskDetail] = useState<TaskModel>(initValue);
   const [userSelect, setUserSelect] = useState<SelecModel[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [attachementUrl, setAttachementUrl] = useState<string[]>([]);
-  const [selectedFile, setSelectedFile] = useState<DocumentPickerResponse>();
-  const [status, setStatus] = useState('');
-  const [bytesTransferented, setBytesTransferented] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [attachementUrl, setAttachementUrl] = useState<string[]>([]);
+  // const [selectedFile, setSelectedFile] = useState<DocumentPickerResponse>();
+  // const [bytesTransferented, setBytesTransferented] = useState(0);
+  // const [isLoading, setIsLoading] = useState(false);
+
+  const user = auth().currentUser;
 
   useEffect(() => {
     handelGetAllUsers();
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-      ]);
-    }
-  }, []);
+    user && setTaskDetail({...taskDetail, uids: [user.uid]});
+  }, [user]);
 
-  const getFilePath = async (file: DocumentPickerResponse) => {
-    if (Platform.OS === 'ios') {
-      return file.uri;
-    } else {
-      return await RNFetchBlob.fs.stat(file.uri);
-    }
-  };
+  useEffect(() => {
+    task &&
+      setTaskDetail({
+        ...taskDetail,
+        title: task.title,
+        description: task.description,
+        uids: task.uids,
+      });
+    console.log(task.title);
+  }, [task]);
 
   const handelGetAllUsers = async () => {
     await firestore()
@@ -82,7 +87,7 @@ const AddNewTask = ({navigation}: any) => {
           const items: SelecModel[] = [];
           snap.forEach(item => {
             items.push({
-              label: item.data().name,
+              label: item.data().displayName,
               value: item.id,
             });
           });
@@ -101,78 +106,59 @@ const AddNewTask = ({navigation}: any) => {
   };
 
   const handleAddNewTask = async () => {
-    const data = {
-      ...taskDetail,
-      attachments,
-    };
+    if (user) {
+      const data = {
+        ...taskDetail,
+        attachments,
+        createdAt: task ? task.createdAt : Date.now(),
+        updatedAt: Date.now(),
+      };
 
-    await firestore()
-      .collection('tasks')
-      .add({...data, createdAt: firestore.FieldValue.serverTimestamp()})
-      .then(() => {
-        console.log('Add new task successfully');
-        navigation.goBack();
-      })
-      .catch(error => console.log(error));
+      if (task) {
+        await firestore()
+          .doc(`tasks/${task.id}`)
+          .update(data)
+          .then(() => {
+            console.log('Add new task successfully');
+            navigation.goBack();
+          });
+      } else {
+        await firestore()
+          .collection('tasks')
+          .add({...data, createdAt: firestore.FieldValue.serverTimestamp()})
+          .then(() => {
+            console.log('Add new task successfully');
+            navigation.goBack();
+          })
+          .catch(error => console.log(error));
+      }
+      // console.log(data);
+    } else {
+      Alert.alert('You not logged in');
+    }
   };
 
-  // const handlePickerDocument = () => {
-  //   DocumentPicker.pick({
-  //     allowMultiSelection: false,
-  //     // type: [DocumentPicker.types.audio],
-  //   })
-  //     .then(res => {
-  //       setAttachments(res);
-  //       res.forEach(item => handleUploadFileToStorage(item));
-  //     })
-  //     .catch(error => console.log(error));
-  // };
-
-  // const handleUploadFileToStorage = async (item: DocumentPickerResponse) => {
-  //   const fileName = item.name ?? `files${Date.now()}`;
-  //   const path = `document/${fileName}`;
-  //   const items = [...attachementUrl];
-  //   await storage().ref(path).putString(item.uri);
-
-  //   await storage()
-  //     .ref(path)
-  //     .getDownloadURL()
-  //     .then(url => {
-  //       items.push(url);
-  //       setAttachementUrl(items);
-  //     })
-  //     .catch(error => console.log(error));
-  // };
-
   return (
-    <Container back title="Add new task" isScroll>
+    <Container back title={task ? task.title : 'Add new task'} isScroll>
       <Section>
-        <Input
-          radius={12}
-          labelStyleProps={{color: colors.white}}
-          label="Title"
+        <InputComponent
           value={taskDetail.title}
           onChange={val => handleChangeValue('title', val)}
-          clear
-          iconClear={<CloseCircle size={20} color={colors.blue} />}
+          title="Title"
+          allowClear
           placeholder="Title of task"
-          inputStyles={{color: colors.white}}
-          styles={{backgroundColor: colors.dark}}
         />
-        <Input
-          radius={12}
-          labelStyleProps={{color: colors.white}}
-          label="Description"
+        <InputComponent
           value={taskDetail.description}
           onChange={val => handleChangeValue('description', val)}
-          clear
-          iconClear={<CloseCircle size={20} color={colors.blue} />}
-          placeholder="Content of task"
-          inputStyles={{color: colors.white}}
-          styles={{backgroundColor: colors.dark, alignItems: 'flex-start'}}
-          minHeight={100}
+          title="Description"
+          allowClear
+          placeholder="Content"
+          multible
+          numberOfLine={3}
         />
       </Section>
+
       <Section>
         {/* <Text text="Due date" color={colors.white} /> */}
         <DateTimePickerComponent
@@ -232,7 +218,12 @@ const AddNewTask = ({navigation}: any) => {
       </Section>
 
       <Section>
-        <Button inline type="primary" title="Save" onPress={handleAddNewTask} />
+        <Button
+          inline
+          type="primary"
+          title={task ? 'Update' : 'Save'}
+          onPress={handleAddNewTask}
+        />
       </Section>
     </Container>
   );

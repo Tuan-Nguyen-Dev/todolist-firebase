@@ -11,6 +11,7 @@ export interface TaskModel {
     color?: string;
     attachments: Attachment[];
     progress?: number;
+    isUrgent: boolean;
     createdAt?: FirebaseFirestoreTypes.Timestamp;
 
 }

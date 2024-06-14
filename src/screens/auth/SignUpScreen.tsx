@@ -9,6 +9,7 @@ import TextComponent from '../../components/TextComponent';
 import {Button, Input, Section, Space} from '@bsdaoquang/rncomponent';
 import {fontFamilies} from '../../constansts/fontFamilies';
 import {colors} from '../../constansts/colors';
+import {HandleUser} from '../../utils/handleUser';
 
 const SigninScreen = ({navigation}: any) => {
   const [email, setEmail] = useState('');
@@ -33,7 +34,7 @@ const SigninScreen = ({navigation}: any) => {
         .then(userCredential => {
           const user = userCredential.user;
 
-          console.log(user);
+          HandleUser.SaveToDatabase(user);
           // save user to firestore
 
           setIsLoading(false);

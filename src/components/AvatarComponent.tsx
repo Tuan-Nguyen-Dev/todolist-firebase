@@ -61,7 +61,7 @@ const AvatarComponent = (props: Props) => {
             globalStyles.text,
             {fontFamily: fontFamilies.bold, fontSize: 14},
           ]}>
-          {userDetail.name.substring(0, 1).toUpperCase()}
+          {userDetail.displayName.substring(0, 1).toUpperCase()}
           {/* dads */}
         </Text>
       </View>

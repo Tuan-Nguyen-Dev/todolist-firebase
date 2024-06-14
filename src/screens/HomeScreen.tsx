@@ -33,11 +33,13 @@ import {TaskModel} from '../models/TaskModel';
 const HomeScreen = ({navigation}: any) => {
   const [isLoading, setIsLoading] = useState(false);
   const [tasks, setTasks] = useState<TaskModel[]>([]);
+  const [urgenTask, setUrgenTask] = useState<TaskModel[]>([]);
 
   const user = auth().currentUser;
 
   useEffect(() => {
     getNewTasks();
+    getUrgentTask();
   }, []);
 
   const getNewTasks = async () => {
@@ -45,6 +47,7 @@ const HomeScreen = ({navigation}: any) => {
     firestore()
       .collection('tasks')
       .orderBy('createdAt', 'desc')
+      .where('uids', 'array-contains', user?.uid)
       .limit(3)
       .onSnapshot(snap => {
         if (snap.empty) {
@@ -57,10 +60,33 @@ const HomeScreen = ({navigation}: any) => {
               ...item.data(),
             }),
           );
-          setIsLoading(false);
+
           setTasks(items);
         }
       });
+    setIsLoading(false);
+  };
+
+  const getUrgentTask = async () => {
+    const filter = firestore()
+      .collection('tasks')
+      .where('uids', 'array-contains', user?.uid)
+      .where('isUrgent', '==', true);
+
+    filter.onSnapshot(snap => {
+      if (!snap.empty) {
+        const items: TaskModel[] = [];
+        snap.forEach((item: any) => {
+          items.push({
+            id: item.id,
+            ...item.data(),
+          });
+        });
+        setUrgenTask(items);
+      } else {
+        setUrgenTask([]);
+      }
+    });
   };
 
   return (
@@ -130,7 +156,12 @@ const HomeScreen = ({navigation}: any) => {
                     })
                   }>
                   <TouchableOpacity
-                    onPress={() => {}}
+                    onPress={() =>
+                      navigation.navigate('AddNewTask', {
+                        editable: true,
+                        task: tasks[0],
+                      })
+                    }
                     style={[globalStyles.iconContainer]}>
                     <Edit2 size={20} color={colors.white} />
                   </TouchableOpacity>
@@ -172,7 +203,12 @@ const HomeScreen = ({navigation}: any) => {
                       })
                     }>
                     <TouchableOpacity
-                      onPress={() => {}}
+                      onPress={() =>
+                        navigation.navigate('AddNewTask', {
+                          editable: true,
+                          task: tasks[1],
+                        })
+                      }
                       style={[globalStyles.iconContainer]}>
                       <Edit2 size={20} color={colors.white} />
                     </TouchableOpacity>
@@ -196,7 +232,14 @@ const HomeScreen = ({navigation}: any) => {
                         color: 'rgba(18,181,22,0.9)',
                       })
                     }>
-                    <TouchableOpacity style={[globalStyles.iconContainer]}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate('AddNewTask', {
+                          editable: true,
+                          task: tasks[2],
+                        })
+                      }
+                      style={[globalStyles.iconContainer]}>
                       <Edit2 size={20} color={colors.white} />
                     </TouchableOpacity>
                     <TitleComponent text={tasks[2].title} />
@@ -211,16 +254,30 @@ const HomeScreen = ({navigation}: any) => {
         )}
 
         <Section>
-          <TitleComponent text="Urgents task" />
-          <Card styles={{backgroundColor: colors.gray, marginHorizontal: 0}}>
-            <Row>
-              <CicularComponent value={40} radius={36} />
-              <View
-                style={{flex: 1, justifyContent: 'center', paddingLeft: 12}}>
-                <TextComponent text="Title of task" />
-              </View>
-            </Row>
-          </Card>
+          {urgenTask.length > 0 &&
+            urgenTask.map(item => (
+              <>
+                <TitleComponent text="Urgents task" />
+                <Card
+                  key={`${item.id}`}
+                  styles={{backgroundColor: colors.gray, marginHorizontal: 0}}>
+                  <Row>
+                    <CicularComponent
+                      value={item.progress ? item.progress * 100 : 0}
+                      radius={36}
+                    />
+                    <View
+                      style={{
+                        flex: 1,
+                        justifyContent: 'center',
+                        paddingLeft: 12,
+                      }}>
+                      <TextComponent text={item.title} />
+                    </View>
+                  </Row>
+                </Card>
+              </>
+            ))}
         </Section>
       </Container>
       <View

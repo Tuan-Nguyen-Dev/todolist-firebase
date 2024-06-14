@@ -1,7 +1,14 @@
 import {Button, Card, Row, Section, Space} from '@bsdaoquang/rncomponent';
 import {Slider} from '@miblanchard/react-native-slider';
 import firestore from '@react-native-firebase/firestore';
-import {AddSquare, Clock, TickCircle} from 'iconsax-react-native';
+import {
+  AddSquare,
+  Calendar,
+  Calendar1,
+  Clock,
+  TickCircle,
+  TickSquare,
+} from 'iconsax-react-native';
 import React, {useEffect, useState} from 'react';
 import {Alert, TouchableOpacity, View} from 'react-native';
 import AvatarGroup from '../../components/AvatarGroup';
@@ -24,6 +31,7 @@ const TaskDetail = ({navigation, route}: any) => {
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [isChanged, setIsChanged] = useState(false);
   const [isVisibleModalSubTask, setIsVisibleModalSubTask] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
 
   useEffect(() => {
     getTaskDetail();
@@ -34,6 +42,7 @@ const TaskDetail = ({navigation, route}: any) => {
     if (taskDetails) {
       setProgress(taskDetails.progress ?? 0);
       setAttachments(taskDetails.attachments);
+      setIsUrgent(taskDetails.isUrgent);
     }
   }, [taskDetails]);
 
@@ -57,6 +66,13 @@ const TaskDetail = ({navigation, route}: any) => {
       setProgress(completedPercent);
     }
   }, [subTasks]);
+
+  const handleUpdateUrgentState = () => {
+    firestore().doc(`tasks/${id}`).update({
+      isUrgent: !isUrgent,
+      updatedAt: Date.now(),
+    });
+  };
 
   const getTaskDetail = () => {
     firestore()
@@ -142,7 +158,7 @@ const TaskDetail = ({navigation, route}: any) => {
             </Row>
 
             <Row styles={{flex: 1}}>
-              <Clock size={18} color={colors.text} />
+              <Calendar size={18} color={colors.text} />
               <Space width={8} />
               <TextComponent
                 text={
@@ -186,6 +202,22 @@ const TaskDetail = ({navigation, route}: any) => {
               />
             </View>
           ))}
+        </Section>
+
+        <Section>
+          <Row onPress={handleUpdateUrgentState}>
+            <TickSquare
+              variant={isUrgent ? 'Bold' : 'Outline'}
+              size={24}
+              color={colors.white}
+            />
+            <TextComponent
+              flex={1}
+              font={fontFamilies.bold}
+              size={18}
+              text={`Is Ugrent`}
+            />
+          </Row>
         </Section>
 
         <Section>
