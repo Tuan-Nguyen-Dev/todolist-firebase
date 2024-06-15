@@ -29,7 +29,10 @@ import ProgressBarComponent from '../components/ProgressBarComponent';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import {TaskModel} from '../models/TaskModel';
+import {monthNames} from '../constansts/appInfos';
+import {add0ToNumber} from '../utils/add0ToNumber';
 
+const date = new Date();
 const HomeScreen = ({navigation}: any) => {
   const [isLoading, setIsLoading] = useState(false);
   const [tasks, setTasks] = useState<TaskModel[]>([]);
@@ -39,8 +42,16 @@ const HomeScreen = ({navigation}: any) => {
 
   useEffect(() => {
     getNewTasks();
-    getUrgentTask();
+    // getUrgentTask();
   }, []);
+
+  useEffect(() => {
+    if (tasks.length > 0) {
+      const items = tasks.filter(element => element.isUrgent);
+
+      setUrgenTask(items);
+    }
+  }, [tasks]);
 
   const getNewTasks = async () => {
     setIsLoading(true);
@@ -48,7 +59,6 @@ const HomeScreen = ({navigation}: any) => {
       .collection('tasks')
       .orderBy('createdAt', 'desc')
       .where('uids', 'array-contains', user?.uid)
-      .limit(3)
       .onSnapshot(snap => {
         if (snap.empty) {
           console.log('Task is empty');
@@ -67,27 +77,11 @@ const HomeScreen = ({navigation}: any) => {
     setIsLoading(false);
   };
 
-  const getUrgentTask = async () => {
-    const filter = firestore()
-      .collection('tasks')
-      .where('uids', 'array-contains', user?.uid)
-      .where('isUrgent', '==', true);
-
-    filter.onSnapshot(snap => {
-      if (!snap.empty) {
-        const items: TaskModel[] = [];
-        snap.forEach((item: any) => {
-          items.push({
-            id: item.id,
-            ...item.data(),
-          });
-        });
-        setUrgenTask(items);
-      } else {
-        setUrgenTask([]);
-      }
+  const handleMoveToTaskDetail = (id?: string, color?: string) =>
+    navigation.navigate('TaskDetail', {
+      id,
+      color,
     });
-  };
 
   return (
     <View style={{flex: 1}}>
@@ -118,7 +112,11 @@ const HomeScreen = ({navigation}: any) => {
         <Section>
           <Row
             styles={[globalStyles.inputContainer]}
-            onPress={() => navigation.navigate('SearchScreen')}>
+            onPress={() =>
+              navigation.navigate('ListTasks', {
+                tasks,
+              })
+            }>
             <TextComponent color={colors.gray2} text="Search task" />
             <SearchNormal size={20} color={colors.white} />
           </Row>
@@ -128,17 +126,32 @@ const HomeScreen = ({navigation}: any) => {
             <Row>
               <View style={{flex: 1}}>
                 <TitleComponent text="Task Progess" />
-                <TextComponent text="30/40t task done !" />
+                <TextComponent
+                  text={` ${
+                    tasks.filter(
+                      element => element.progress && element.progress === 1,
+                    ).length
+                  }/${tasks.length}`}
+                />
                 <Space height={10} />
                 <Row justifyContent="flex-start">
                   <TagComponent
-                    text="Match 22"
-                    onPress={() => console.log('Say hi >>>')}
+                    text={`${monthNames[date.getMonth()]} ${add0ToNumber(
+                      date.getDate(),
+                    )}`}
                   />
                 </Row>
               </View>
               <View>
-                <CicularComponent value={80} />
+                <CicularComponent
+                  value={Math.floor(
+                    (tasks.filter(
+                      element => element.progress && element.progress === 1,
+                    ).length /
+                      tasks.length) *
+                      100,
+                  )}
+                />
               </View>
             </Row>
           </Card>
@@ -147,14 +160,20 @@ const HomeScreen = ({navigation}: any) => {
           <ActivityIndicator />
         ) : tasks.length > 0 ? (
           <Section>
+            <Row
+              justifyContent="flex-end"
+              onPress={() =>
+                navigation.navigate('ListTasks', {
+                  tasks,
+                })
+              }>
+              <TextComponent size={16} text="See All" flex={0} />
+            </Row>
+            <Space height={10} />
             <Row styles={{alignItems: 'flex-start'}}>
               <View style={{flex: 1}}>
                 <CardImageConponent
-                  onPress={() =>
-                    navigation.navigate('TaskDetail', {
-                      id: tasks[0].id,
-                    })
-                  }>
+                  onPress={() => handleMoveToTaskDetail(tasks[0].id)}>
                   <TouchableOpacity
                     onPress={() =>
                       navigation.navigate('AddNewTask', {
@@ -197,10 +216,10 @@ const HomeScreen = ({navigation}: any) => {
                   <CardImageConponent
                     color="rgba(33,150,243,0.9)"
                     onPress={() =>
-                      navigation.navigate('TaskDetail', {
-                        id: tasks[1].id,
-                        color: 'rgba(33,150,243,0.9)',
-                      })
+                      handleMoveToTaskDetail(
+                        tasks[1].id,
+                        'rgba(33,150,243,0.9)',
+                      )
                     }>
                     <TouchableOpacity
                       onPress={() =>
@@ -214,10 +233,12 @@ const HomeScreen = ({navigation}: any) => {
                     </TouchableOpacity>
                     <TitleComponent text={tasks[1].title} />
                     {tasks[1].uids && <AvatarGroup uids={tasks[1].uids} />}
-                    {tasks[1].progress && (
+                    {tasks[1].progress ? (
                       <ProgressBarComponent
                         percent={`${Math.floor(tasks[1].progress * 100)}%`}
                       />
+                    ) : (
+                      <></>
                     )}
                   </CardImageConponent>
                 )}
@@ -227,10 +248,7 @@ const HomeScreen = ({navigation}: any) => {
                   <CardImageConponent
                     color="rgba(18,181,22,0.9)"
                     onPress={() =>
-                      navigation.navigate('TaskDetail', {
-                        id: tasks[2].id,
-                        color: 'rgba(18,181,22,0.9)',
-                      })
+                      handleMoveToTaskDetail(tasks[2].id, 'rgba(18,181,22,0.9)')
                     }>
                     <TouchableOpacity
                       onPress={() =>
@@ -243,7 +261,12 @@ const HomeScreen = ({navigation}: any) => {
                       <Edit2 size={20} color={colors.white} />
                     </TouchableOpacity>
                     <TitleComponent text={tasks[2].title} />
-                    <TextComponent text={tasks[2].description} size={15} />
+                    <Text
+                      text={tasks[2].description}
+                      numberOfLine={3}
+                      color={colors.white}
+                      size={15}
+                    />
                   </CardImageConponent>
                 )}
               </View>
@@ -256,10 +279,11 @@ const HomeScreen = ({navigation}: any) => {
         <Section>
           {urgenTask.length > 0 &&
             urgenTask.map(item => (
-              <>
+              <View key={`index${item.id}`}>
                 <TitleComponent text="Urgents task" />
                 <Card
-                  key={`${item.id}`}
+                  onPress={() => handleMoveToTaskDetail(item.id)}
+                  key={`index${item.id}`}
                   styles={{backgroundColor: colors.gray, marginHorizontal: 0}}>
                   <Row>
                     <CicularComponent
@@ -276,7 +300,7 @@ const HomeScreen = ({navigation}: any) => {
                     </View>
                   </Row>
                 </Card>
-              </>
+              </View>
             ))}
         </Section>
       </Container>
@@ -291,33 +315,12 @@ const HomeScreen = ({navigation}: any) => {
           justifyContent: 'center',
         }}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('AddNewTask')}
-          style={[
-            globalStyles.row,
-            {
-              backgroundColor: colors.blue,
-              padding: 10,
-              borderRadius: 12,
-              paddingVertical: 14,
-              width: '80%',
-            },
-          ]}>
-          <TextComponent text="Add new tasks" flex={0} />
-          <Add size={22} color={colors.white} />
-        </TouchableOpacity>
-      </View>
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          right: 0,
-          left: 0,
-          padding: 20,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('AddNewTask')}
+          onPress={() =>
+            navigation.navigate('AddNewTask', {
+              editable: false,
+              task: undefined,
+            })
+          }
           style={[
             globalStyles.row,
             {

@@ -55,7 +55,7 @@ const TaskDetail = ({navigation, route}: any) => {
     } else {
       setIsChanged(false);
     }
-  }, [progress, attachments, attachments]);
+  }, [progress, attachments, taskDetails]);
 
   useEffect(() => {
     if (subTasks.length > 0) {
@@ -131,6 +131,34 @@ const TaskDetail = ({navigation, route}: any) => {
       console.log(error);
     }
   };
+
+  const handleRemoveTask = () => {
+    Alert.alert('Confrim', 'Are you sure,you want to remove', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+        onPress: () => {
+          console.log('Cancel');
+        },
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await firestore()
+            .doc(`tasks/${id}`)
+            .delete()
+            .then(() => {
+              navigation.goBack();
+            })
+            .catch(error => {
+              console.log(error);
+            });
+        },
+      },
+    ]);
+  };
+
   return taskDetails ? (
     <>
       <Container back isScroll title={taskDetails.title}>
@@ -309,6 +337,11 @@ const TaskDetail = ({navigation, route}: any) => {
                 </Row>
               </Card>
             ))}
+        </Section>
+        <Section>
+          <Row onPress={handleRemoveTask}>
+            <TextComponent text="Delete Task" color="red" flex={0} />
+          </Row>
         </Section>
       </Container>
       {isChanged && (

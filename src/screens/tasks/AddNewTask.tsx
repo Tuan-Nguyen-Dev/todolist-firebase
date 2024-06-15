@@ -45,7 +45,7 @@ import auth from '@react-native-firebase/auth';
 import InputComponent from '../../components/InputComponent';
 
 const AddNewTask = ({navigation, route}: any) => {
-  const {editable, task}: {editable: boolean; task: TaskModel} = route.params;
+  const {editable, task}: {editable: boolean; task?: TaskModel} = route.params;
 
   const [taskDetail, setTaskDetail] = useState<TaskModel>(initValue);
   const [userSelect, setUserSelect] = useState<SelecModel[]>([]);
@@ -54,7 +54,6 @@ const AddNewTask = ({navigation, route}: any) => {
   // const [selectedFile, setSelectedFile] = useState<DocumentPickerResponse>();
   // const [bytesTransferented, setBytesTransferented] = useState(0);
   // const [isLoading, setIsLoading] = useState(false);
-
   const user = auth().currentUser;
 
   useEffect(() => {
@@ -73,7 +72,7 @@ const AddNewTask = ({navigation, route}: any) => {
         description: task.description,
         uids: task.uids,
       });
-    console.log(task.title);
+    // console.log(task.title);
   }, [task]);
 
   const handelGetAllUsers = async () => {
