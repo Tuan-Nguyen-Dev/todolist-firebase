@@ -22,6 +22,8 @@ import {Attachment, SubTask, TaskModel} from '../../models/TaskModel';
 import {calcFileSize} from '../../utils/calcFileSize';
 import {HandleDateTime} from '../../utils/handeDateTime';
 import ModalAddSubTask from '../../modals/ModalAddSubTask';
+import {HandleNotification} from '../../utils/handleNotification';
+import auth from '@react-native-firebase/auth';
 
 const TaskDetail = ({navigation, route}: any) => {
   const {id, color}: {id: string; color?: string} = route.params;
@@ -32,6 +34,8 @@ const TaskDetail = ({navigation, route}: any) => {
   const [isChanged, setIsChanged] = useState(false);
   const [isVisibleModalSubTask, setIsVisibleModalSubTask] = useState(false);
   const [isUrgent, setIsUrgent] = useState(false);
+
+  const user = auth().currentUser;
 
   useEffect(() => {
     getTaskDetail();
@@ -149,6 +153,15 @@ const TaskDetail = ({navigation, route}: any) => {
             .doc(`tasks/${id}`)
             .delete()
             .then(() => {
+              taskDetails?.uids.forEach(id => {
+                HandleNotification.SendNotfication({
+                  title: 'Delete task',
+                  body: `Delete task by ${user?.email}`,
+                  taskId: '',
+                  memberId: id,
+                });
+              });
+
               navigation.goBack();
             })
             .catch(error => {

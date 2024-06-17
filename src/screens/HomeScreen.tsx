@@ -31,6 +31,7 @@ import firestore from '@react-native-firebase/firestore';
 import {TaskModel} from '../models/TaskModel';
 import {monthNames} from '../constansts/appInfos';
 import {add0ToNumber} from '../utils/add0ToNumber';
+import {HandleNotification} from '../utils/handleNotification';
 
 const date = new Date();
 const HomeScreen = ({navigation}: any) => {
@@ -42,6 +43,7 @@ const HomeScreen = ({navigation}: any) => {
 
   useEffect(() => {
     getNewTasks();
+    HandleNotification.checkNotificationPermission();
     // getUrgentTask();
   }, []);
 
@@ -72,6 +74,7 @@ const HomeScreen = ({navigation}: any) => {
           );
 
           setTasks(items);
+          setIsLoading(false);
         }
       });
     setIsLoading(false);
@@ -143,15 +146,17 @@ const HomeScreen = ({navigation}: any) => {
                 </Row>
               </View>
               <View>
-                <CicularComponent
-                  value={Math.floor(
-                    (tasks.filter(
-                      element => element.progress && element.progress === 1,
-                    ).length /
-                      tasks.length) *
-                      100,
-                  )}
-                />
+                {tasks.length > 0 && (
+                  <CicularComponent
+                    value={Math.floor(
+                      (tasks.filter(
+                        element => element.progress && element.progress === 1,
+                      ).length /
+                        tasks.length) *
+                        100,
+                    )}
+                  />
+                )}
               </View>
             </Row>
           </Card>

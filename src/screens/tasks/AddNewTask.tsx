@@ -43,6 +43,7 @@ const initValue: TaskModel = {
 import {FirebaseAuthTypes} from '@react-native-firebase/auth';
 import auth from '@react-native-firebase/auth';
 import InputComponent from '../../components/InputComponent';
+import {HandleNotification} from '../../utils/handleNotification';
 
 const AddNewTask = ({navigation, route}: any) => {
   const {editable, task}: {editable: boolean; task?: TaskModel} = route.params;
@@ -118,20 +119,39 @@ const AddNewTask = ({navigation, route}: any) => {
           .doc(`tasks/${task.id}`)
           .update(data)
           .then(() => {
-            console.log('Add new task successfully');
+            if (userSelect.length > 0) {
+              userSelect.forEach(member => {
+                member.value !== user.uid &&
+                  HandleNotification.SendNotfication({
+                    title: 'Update task',
+                    body: `Your task has been updated ${user.email}`,
+                    taskId: task?.id ?? '',
+                    memberId: member.value,
+                  });
+              });
+            }
             navigation.goBack();
           });
       } else {
         await firestore()
           .collection('tasks')
           .add({...data, createdAt: firestore.FieldValue.serverTimestamp()})
-          .then(() => {
-            console.log('Add new task successfully');
+          .then(snap => {
+            if (userSelect.length > 0) {
+              userSelect.forEach(member => {
+                member.value !== user.uid &&
+                  HandleNotification.SendNotfication({
+                    title: 'Create a new tast',
+                    body: `Create a new task ${user.email}`,
+                    taskId: snap.id,
+                    memberId: member.value,
+                  });
+              });
+            }
             navigation.goBack();
           })
           .catch(error => console.log(error));
       }
-      // console.log(data);
     } else {
       Alert.alert('You not logged in');
     }
