@@ -8,7 +8,7 @@ import {
 import React, {useEffect, useState} from 'react';
 import Container from '../components/Container';
 import {globalStyles} from '../styles/globalStyles';
-import {Card, Row, Section, Space, Text} from '@bsdaoquang/rncomponent';
+import {Button, Card, Row, Section, Space, Text} from '@bsdaoquang/rncomponent';
 import {colors} from '../constansts/colors';
 import {fontFamilies} from '../constansts/fontFamilies';
 import TextComponent from '../components/TextComponent';
@@ -111,7 +111,10 @@ const HomeScreen = ({navigation}: any) => {
             </TouchableOpacity>
           </Row>
         </Section>
-
+        {/* <Button
+          title="Get Access Token"
+          onPress={() => HandleNotification.getAccessToken()}
+        /> */}
         <Section>
           <Row
             styles={[globalStyles.inputContainer]}

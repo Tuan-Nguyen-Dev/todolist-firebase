@@ -33,6 +33,9 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
+services-account.json
+service-account.json
+todolist-note-53cc5-firebase-adminsdk-h2qfr-4520e582b5.json
 
 # node.js
 #
