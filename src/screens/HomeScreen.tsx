@@ -111,10 +111,10 @@ const HomeScreen = ({navigation}: any) => {
             </TouchableOpacity>
           </Row>
         </Section>
-        {/* <Button
+        <Button
           title="Get Access Token"
-          onPress={() => HandleNotification.getAccessToken()}
-        /> */}
+          onPress={() => HandleNotification.getAccessTokenFromServer()}
+        />
         <Section>
           <Row
             styles={[globalStyles.inputContainer]}

@@ -35,12 +35,34 @@ export class HandleNotification {
                 client_email: seviceacount.client_email,
                 private_key: seviceacount.private_key,
             });
-            console.log("<<<<<", res.access_token);
+            // console.log("<<<<<", res.access_token);
             return (res.access_token)
         } catch (error) {
             console.log(error);
         }
     };
+
+    static getAccessTokenFromServer = async () => {
+        try {
+            const res = await fetch('https://server-shopping-app-test-1-v5mg.onrender.com/get-accesstoken', {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    email: seviceacount.client_email,
+                    key: seviceacount.private_key,
+                })
+            })
+            const result = await res.json();
+
+            return (result.data.access_token)
+
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     static getFcmToken = async () => {
         const fcmToken = await AsyncStorage.getItem('fcmToken');
 
